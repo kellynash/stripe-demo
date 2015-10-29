@@ -1,4 +1,5 @@
 var React = require('react');
+var PayButton = require('./PayButton');
 
 var LineItem = React.createClass({
   render: function() {
@@ -14,35 +15,12 @@ var LineItem = React.createClass({
   }
 });
 
-
-module.exports = React.createClass ({
-  handleClick: function(e) {
-    var invoice = this.props.model;
-    var description = 'Invoice # ' + invoice.invoiceId;
-
-    this._stripeCheckout.open({
-      name: 'kellynash',
-      description: description,
-      amount: invoice.total
-    });
-    e.preventDefault();
-  },
-
-  handleStripeToken: function(token) {
-    console.log('token', token);
+module.exports = React.createClass({
+  handlePaid: function(res) {
+    this.props.store.refresh(res.body.invoiceId);
   },
 
   render: function() {
-    //console.debug('render. model:' this.props.model);
-
-    this._stripeCheckout = StripeCheckout.configure({
-    key: 'pk_test_D5m8J4GDBwCxuH7Kmt5gxbbt',
-    image: '/img/mcs-logo-128x128.png',
-      locale: 'auto',
-      token: this.handleStripeToken
-    });
-
-
     var invoice = this.props.model;
     var invoiceId = invoice.invoiceId;
     var lineItemModels = invoice.lineItems;
@@ -65,6 +43,21 @@ module.exports = React.createClass ({
     var phone = user.phone;
 
     var description = 'Invoice #' + invoiceId
+
+    var payment;
+    if (invoice.status === 'paid') {
+      payment = <div>Payment received. Thanks!</div>
+    } else {
+      payment = (
+        <PayButton
+          amount={invoice.total}
+          name="Lance Fisher"
+          description={description}
+          invoiceId={invoiceId}
+          onPaid={this.handlePaid}
+        ></PayButton>
+      )
+    }
 
     return (
       <div>
@@ -99,10 +92,9 @@ module.exports = React.createClass ({
         </table>
 
         <div>
-
+          {payment}
         </div>
-          <button onClick={this.handleClick}>Pay Now</button>
-        </div>
+      </div>
     );
   }
 
